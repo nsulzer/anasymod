@@ -444,6 +444,9 @@ class Config(BaseConfig):
         """ type(bool) : If True, treat Verilog (*.v) files as SystemVerilog (*.sv) in Vivado.
             This option requires there to be at least one *.v file in the project sources. """
 
+        self.probe_to_file = False
+        """ type(bool) : If True, all probes specified will be dumped to a file <probe_name>.out in the 'raw_results' folder. """
+
 def find_tool(name, hints=None, sys_path_hint=True):
     # set defaults
     if hints is None:

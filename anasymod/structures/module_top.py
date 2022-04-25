@@ -342,6 +342,24 @@ class ModuleTop(JinjaTempl):
                 raise Exception(f'ERROR: unexpected format for cpu_debug_hierarchies attribute of '
                                 f'project_config: {dbg_mods_list}, expecting tuple, list or None')
 
+        #####################################################
+        # Dump signals to file
+        #####################################################
+        # self.dump_to_file = True
+        self.dump_to_file = pcfg.cfg.probe_to_file
+        self.probe_file_dump_path = back2fwd(target.probe_file_dump_path)
+        self.probe_file_descriptors = SVAPI()
+        self.probe_file_open = SVAPI()
+        self.probe_file_write = SVAPI()
+        # TODO: fix indentation
+        # self.probe_file_descriptors.indent()
+        # self.probe_file_open.indent()
+        # self.probe_file_write.indent()
+        for probe in scfg.digital_probes + scfg.analog_probes:
+            self.probe_file_descriptors.writeln(f'integer {probe.name}_file;')
+            self.probe_file_open.writeln(f'{probe.name}_file = $fopen("{self.probe_file_dump_path}/{probe.name}.out");')
+            self.probe_file_write.writeln(f'$fdisplay({probe.name}_file, "%f", {probe.name});')
+        
     TEMPLATE_TEXT = '''
 `timescale 1ns/1ps
 
@@ -449,6 +467,19 @@ assign emu_clk = emu_clk_2x;
         end
     end
     {% endif %}
+
+    {% if subst.dump_to_file %}
+    //file descriptors for dumping probe signals
+    {{subst.probe_file_descriptors.text}}
+    // Open files for dumping probe signals
+    initial begin
+        {{subst.probe_file_open.text}}
+    end
+    always @(posedge `CLK_MSDSL) begin
+        {{subst.probe_file_write.text}}
+    end
+    {% endif %}
+
     // dump waveforms to a specified VCD file
     `define ADD_QUOTES_TO_MACRO(macro) `"macro`"
     initial begin

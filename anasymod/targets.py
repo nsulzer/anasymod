@@ -146,6 +146,10 @@ class Target():
         return os.path.join(self.prj_cfg.build_root, r"raw_results", self.result_name_raw)
 
     @property
+    def probe_file_dump_path(self):
+        return os.path.join(self.prj_cfg.build_root, r"raw_results")
+
+    @property
     def expanded_simctrl_path(self):
         """
         Path used to load simctrl file. This allows to use a custom simctrl configuration for a target.
