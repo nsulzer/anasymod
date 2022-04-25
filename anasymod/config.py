@@ -129,7 +129,8 @@ class VivadoConfig():
         self.project_name = 'prj'
         # intermediate variables for generic Xilinx path
         self.hints = []
-        self.hints += [lambda: os.path.join(env['VIVADO_INSTALL_PATH'], 'bin')]
+        # self.hints += [lambda: os.path.join(env['VIVADO_INSTALL_PATH'], 'bin')]
+        self.hints += [lambda: os.path.join('C:\\Xilinx\\Vivado\\2019.2', 'bin')]
         if platform in {'win32', 'cygwin'}:
             try:
                 xilinx_version_path = parent.cfg_dict['TOOLS_xilinx']
