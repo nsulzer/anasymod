@@ -114,6 +114,8 @@ class EmuConfig:
             return ZCU111()
         elif self.cfg.board_name == BoardNames.ARTY_200T_CUSTOM_LIDAR:
             return ARTY_200T_CUSTOM_LIDAR()
+        elif self.cfg.board_name == BoardNames.ZEDBOARD:
+            return ZEDBOARD()
         else:
             raise Exception(f'The requested board {self.cfg.board_name} could not be found.')
 

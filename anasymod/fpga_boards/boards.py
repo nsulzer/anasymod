@@ -178,3 +178,18 @@ class ZCU111(FPGA_Board):
     uart_suffix = '.1'  # needed since this board has four com ports under the same VID/PID
     is_ultrascale = True
     no_rev_check = True  # needed in case the FPGA is an engineering sample
+
+class ZEDBOARD(FPGA_Board):
+    """
+    Container to store ZEDBOARD FPGA board specific properties.
+    """
+    clk_pin = ['Y9']
+    clk_io = 'LVCMOS33'
+    clk_freq = 100e6 # for PL system
+    board_part = 'digilentinc.com:zedboard:part0:1.0'
+    full_part_name = 'xc7z020clg484-1'
+    short_part_name = 'xc7z020'
+    bram = 4.9e6
+    fpga_sim_ctrl = [FPGASimCtrl.UART_ZYNQ, FPGASimCtrl.VIVADO_VIO]
+    uart_zynq_vid = [4292]
+    uart_zynq_pid = [60000]

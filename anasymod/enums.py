@@ -25,6 +25,7 @@ class BoardNames:
     ZCU111
     ULTRA96
     TE0720
+    ZEDBOARD
 
     """
     PYNQ_Z1 = 'PYNQ_Z1'
@@ -38,6 +39,7 @@ class BoardNames:
     ULTRA96 = 'ULTRA96'
     TE0720 = 'TE0720'
     ARTY_200T_CUSTOM_LIDAR = 'ARTY_200T_CUSTOM_LIDAR'
+    ZEDBOARD = 'ZEDBOARD'
 
 class PortDir:
     """
