@@ -191,5 +191,5 @@ class ZEDBOARD(FPGA_Board):
     short_part_name = 'xc7z020'
     bram = 4.9e6
     fpga_sim_ctrl = [FPGASimCtrl.UART_ZYNQ, FPGASimCtrl.VIVADO_VIO]
-    uart_zynq_vid = [4292]
-    uart_zynq_pid = [60000]
+    uart_zynq_vid = [1204]
+    uart_zynq_pid = [8]
