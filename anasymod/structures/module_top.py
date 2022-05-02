@@ -57,6 +57,44 @@ class ModuleTop(JinjaTempl):
 
         module = ModuleInst(api=self.module_ifc, name='top')
         module.add_inputs(scfg.clk_i)
+        # HACK: This has to beome automatic from a config file!
+        self.port_list_i = [
+            DigitalSignal(abspath=None, width=1, name='i_sw0'),
+            DigitalSignal(abspath=None, width=1, name='i_sw1'),
+            DigitalSignal(abspath=None, width=1, name='i_sw2'),
+            DigitalSignal(abspath=None, width=1, name='i_sw3'),
+            DigitalSignal(abspath=None, width=1, name='i_sw4'),
+            DigitalSignal(abspath=None, width=1, name='i_sw5'),
+            DigitalSignal(abspath=None, width=1, name='i_sw6'),
+            DigitalSignal(abspath=None, width=1, name='i_sw7'),
+            DigitalSignal(abspath=None, width=1, name='i_btnu'),
+            DigitalSignal(abspath=None, width=1, name='i_btnd'),
+            DigitalSignal(abspath=None, width=1, name='i_btnl'),
+            DigitalSignal(abspath=None, width=1, name='i_btnr'),
+            DigitalSignal(abspath=None, width=1, name='i_btnc'),
+            
+            DigitalSignal(abspath=None, width=1, name='i_spi_miso'),
+            DigitalSignal(abspath=None, width=1, name='i_codec_bit_clock'),
+            DigitalSignal(abspath=None, width=1, name='i_codec_lr_clock'),
+            DigitalSignal(abspath=None, width=1, name='i_codec_adc_data')
+        ]
+        self.port_list_o = [
+            DigitalSignal(abspath=None, width=1, name='o_ld0'),
+            DigitalSignal(abspath=None, width=1, name='o_ld1'),
+            DigitalSignal(abspath=None, width=1, name='o_ld2'),
+            DigitalSignal(abspath=None, width=1, name='o_ld3'),
+            DigitalSignal(abspath=None, width=1, name='o_ld4'),
+            DigitalSignal(abspath=None, width=1, name='o_ld5'),
+            DigitalSignal(abspath=None, width=1, name='o_ld6'),
+            DigitalSignal(abspath=None, width=1, name='o_ld7'),
+            DigitalSignal(abspath=None, width=1, name='o_spi_cs_n'),
+            DigitalSignal(abspath=None, width=1, name='o_spi_clock'),
+            DigitalSignal(abspath=None, width=1, name='o_spi_mosi'),
+            DigitalSignal(abspath=None, width=1, name='o_codec_mclock'),
+            DigitalSignal(abspath=None, width=1, name='o_codec_dac_data')
+        ]
+        module.add_inputs(self.port_list_i)
+        module.add_outputs(self.port_list_o)
         if ((target.cfg.fpga_sim_ctrl is not None) and
                 (target.cfg.fpga_sim_ctrl == FPGASimCtrl.UART_ZYNQ) and
                 (not pcfg.board.is_ultrascale)):
@@ -317,6 +355,9 @@ class ModuleTop(JinjaTempl):
             self.tb_inst_ifc.gen_signal(clk_indep_elem)
         tb_inst = ModuleInst(api=self.tb_inst_ifc, name='tb')
         tb_inst.add_inputs(scfg.clk_independent, connections=scfg.clk_independent)
+        # HACK: This has to beome automatic from a config file!
+        tb_inst.add_inputs(self.port_list_i, connections=self.port_list_i)
+        tb_inst.add_outputs(self.port_list_o, connections=self.port_list_o)
         tb_inst.generate_instantiation()
 
         #####################################################
