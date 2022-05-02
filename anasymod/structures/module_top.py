@@ -137,7 +137,8 @@ class ModuleTop(JinjaTempl):
             if clk.abspath_dt_req is not None:
                 self.derived_clk_assigns.writeln(f'assign dt_req_{clk.name} = {clk.abspath_dt_req};')
             if clk.abspath_gated_clk is not None:
-                self.derived_clk_assigns.writeln(f'assign clk_val_{clk.name} = {clk.abspath_gated_clk_req};')
+                if clk.abspath_gated_clk_req is not None:
+                    self.derived_clk_assigns.writeln(f'assign clk_val_{clk.name} = {clk.abspath_gated_clk_req};')
                 self.derived_clk_assigns.writeln(f'assign {clk.abspath_gated_clk} = clk_{clk.name};')
 
         self.num_dt_reqs = scfg.num_dt_reqs
