@@ -270,6 +270,12 @@ class Config(BaseConfig):
         self.simctrl_path = os.path.join(prj_cfg.root, 'simctrl.yaml')
         """ type(str) : Path used to load simctrl file. This allows to use a custom simctrl configuration for a target. """
 
+        self.ports_in = []
+        """ type(List(str)) : Input ports to top module. """
+
+        self.ports_out = []
+        """ type(List(str)) : Output ports from top module. """
+
 class Content():
     """
     Container storing all Project specific source files, such as RTL, eSW code, blockdiagrams, IP core configs,
