@@ -538,12 +538,16 @@ class Analysis():
 
         # set config file location for GTKWave
         # TODO: clean this up; it's a bit messy...
-        if isinstance(target, FPGATarget):
-            gtkw_search_order = ['view_fpga.gtkw', 'view.gtkw']
-        elif isinstance(target, CPUTarget):
-            gtkw_search_order = ['view_sim.gtkw', 'view.gtkw']
-        else:
-            gtkw_search_order = ['view.gtkw']
+        # if isinstance(target, FPGATarget):
+        #     gtkw_search_order = ['view_fpga.gtkw', 'view.gtkw']
+        # elif isinstance(target, CPUTarget):
+        #     gtkw_search_order = ['view_sim.gtkw', 'view.gtkw']
+        # else:
+        #     gtkw_search_order = ['view.gtkw']
+
+        # HACK: Select gtkw .view file based on target name
+        gtkw_search_order = ['view_'+self.args.active_target+'.gtkw']
+
 
         for basename in gtkw_search_order:
             candidate_path = os.path.join(root, basename)
