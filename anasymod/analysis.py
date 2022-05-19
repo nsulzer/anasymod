@@ -550,7 +550,7 @@ class Analysis():
 
 
         for basename in gtkw_search_order:
-            candidate_path = os.path.join(root, basename)
+            candidate_path = os.path.join(root, "gtkwave", basename)
             if os.path.isfile(candidate_path):
                 self._prj_cfg.gtkwave_config.gtkw_config = candidate_path
                 break
