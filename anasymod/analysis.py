@@ -792,7 +792,10 @@ class Analysis():
                 top_module = 'top'
 
             print(f'Using top module {top_module} for fileset {fileset}.')
-            self.filesets.add_define(define=Define(name='CLK_MSDSL', value=f'{top_module}.clk_default_osc', fileset=fileset))
+            if self._prj_cfg.cfg.no_time_manager:
+                self.filesets.add_define(define=Define(name='CLK_MSDSL', value=f'{top_module}.emu_clk', fileset=fileset))
+            else:
+                self.filesets.add_define(define=Define(name='CLK_MSDSL', value=f'{top_module}.clk_default_osc', fileset=fileset))
             self.filesets.add_define(define=Define(name='CKE_MSDSL', value=f'{top_module}.emu_cke', fileset=fileset))
             self.filesets.add_define(define=Define(name='RST_MSDSL', value=f'{top_module}.emu_rst', fileset=fileset))
             self.filesets.add_define(define=Define(name='DT_WIDTH', value=f'{self._prj_cfg.cfg.dt_width}', fileset=fileset))

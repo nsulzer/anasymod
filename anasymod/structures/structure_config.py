@@ -28,6 +28,8 @@ class StructureConfig():
         self.cfg = Config(prj_cfg=prj_cfg)
         self.cfg.update_config()
 
+        can_use_default_oscillator = False if prj_cfg.cfg.no_time_manager else can_use_default_oscillator
+
         #########################################################
         # Manage clks
         #########################################################

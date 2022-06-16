@@ -100,18 +100,21 @@ class ModuleTop(JinjaTempl):
         self.derived_clk_assigns = SVAPI()
         for k, clk in enumerate(scfg.clk_derived):
             self.derived_clk_assigns.writeln(f'// derived clock: {clk.name}')
-            if clk.abspath_emu_dt is not None:
-                self.derived_clk_assigns.writeln(f'assign {clk.abspath_emu_dt} = emu_dt;')
-            if clk.abspath_emu_clk is not None:
-                self.derived_clk_assigns.writeln(f'assign {clk.abspath_emu_clk} = emu_clk;')
-            if clk.abspath_emu_rst is not None:
-                self.derived_clk_assigns.writeln(f'assign {clk.abspath_emu_rst} = emu_rst;')
-            if clk.abspath_dt_req is not None:
-                self.derived_clk_assigns.writeln(f'assign dt_req_{clk.name} = {clk.abspath_dt_req};')
-            if clk.abspath_gated_clk is not None:
-                if clk.abspath_gated_clk_req is not None:
-                    self.derived_clk_assigns.writeln(f'assign clk_val_{clk.name} = {clk.abspath_gated_clk_req};')
-                self.derived_clk_assigns.writeln(f'assign {clk.abspath_gated_clk} = clk_{clk.name};')
+            if self.no_time_manager:
+                self.derived_clk_assigns.writeln(f'assign {clk.abspath_gated_clk} = {clk.abspath_gated_clk_req};')
+            else:
+                if clk.abspath_emu_dt is not None:
+                    self.derived_clk_assigns.writeln(f'assign {clk.abspath_emu_dt} = emu_dt;')
+                if clk.abspath_emu_clk is not None:
+                    self.derived_clk_assigns.writeln(f'assign {clk.abspath_emu_clk} = emu_clk;')
+                if clk.abspath_emu_rst is not None:
+                    self.derived_clk_assigns.writeln(f'assign {clk.abspath_emu_rst} = emu_rst;')
+                if clk.abspath_dt_req is not None:
+                    self.derived_clk_assigns.writeln(f'assign dt_req_{clk.name} = {clk.abspath_dt_req};')
+                if clk.abspath_gated_clk is not None:
+                    if clk.abspath_gated_clk_req is not None:
+                        self.derived_clk_assigns.writeln(f'assign clk_val_{clk.name} = {clk.abspath_gated_clk_req};')
+                    self.derived_clk_assigns.writeln(f'assign {clk.abspath_gated_clk} = clk_{clk.name};')
 
         self.num_dt_reqs = scfg.num_dt_reqs
         self.num_gated_clks = scfg.num_gated_clks
@@ -389,7 +392,9 @@ module top(
 
 // Declaration of control signals
 {{subst.inst_itl_ctlsigs.text}}
+{% if not subst.no_time_manager %}
 (* dont_touch = "true" *) logic [((`DT_WIDTH)-1):0] dt_req_stall;
+{% endif %}
 {% if subst.use_default_oscillator %}
 (* dont_touch = "true" *) logic [((`DT_WIDTH)-1):0] dt_req_default_osc;
 {% endif %}
