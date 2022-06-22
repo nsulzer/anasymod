@@ -73,6 +73,12 @@ class VivadoEmulation(VivadoTCLGenerator):
         # add include directories
         self.add_include_dirs(content=self.target.content, objects='[current_fileset]')
 
+        # add things for post-synthesis simulation.
+        self.set_property('top', '{post_tb}', '[get_filesets {sim_1}]')
+        self.add_project_defines(content=self.target.content, fileset='[get_filesets {sim_1}]')
+        self.set_property('{xsim.simulate.runtime}', '{-all}', '[get_fileset sim_1]')
+        self.set_property('{xsim.view}', '/home/s1788973/thesis/sd-emu/models/o1b1/gtkwave/post_tb_func_synth.wcfg', '[get_fileset sim_1]')
+
         # if desired, treat Verilog (*.v) files as SystemVerilog (*.sv)
         if self.target.prj_cfg.cfg.treat_v_as_sv:
             self.writeln('set_property file_type SystemVerilog [get_files -filter {FILE_TYPE == Verilog}]')
