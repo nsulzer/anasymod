@@ -63,7 +63,7 @@ class TemplLAUNCH_FPGA_SIM(JinjaTempl):
 
     TEMPLATE_TEXT = '''\
 # Connect to hardware
-open_hw
+open_hw_manager
 catch {disconnect_hw_server}
 {% if subst.server_addr is none %}
 connect_hw_server
