@@ -200,7 +200,7 @@ class XSCTConfig():
         # set project name
         self.project_name = 'prj'
         # intermediate variables for generic Xilinx path
-        self.hints = []
+        self.hints = ["/remote/labware/packages/xilinx/vitis/2020.1/bin/"]
         self.hints += [lambda: os.path.join(env['XSCT_INSTALL_PATH'], 'bin')]
         if platform in {'win32', 'cygwin'}:
             try:
