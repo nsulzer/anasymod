@@ -74,10 +74,12 @@ class VivadoEmulation(VivadoTCLGenerator):
         self.add_include_dirs(content=self.target.content, objects='[current_fileset]')
 
         # add things for post-synthesis simulation.
-        self.set_property('top', '{post_tb}', '[get_filesets {sim_1}]')
-        self.add_project_defines(content=self.target.content, fileset='[get_filesets {sim_1}]')
-        self.set_property('{xsim.simulate.runtime}', '{-all}', '[get_fileset sim_1]')
-        self.set_property('{xsim.view}', '/home/s1788973/thesis/sd-emu/models/o1b1/gtkwave/post_tb_func_synth.wcfg', '[get_fileset sim_1]')
+        if self.target.prj_cfg.cfg.post_sim:
+            self.writeln('# Post synthesis simulation')
+            self.set_property('top', '{post_tb}', '[get_filesets {sim_1}]')
+            self.add_project_defines(content=self.target.content, fileset='[get_filesets {sim_1}]')
+            self.set_property('{xsim.simulate.runtime}', '{-all}', '[get_fileset sim_1]')
+            self.set_property('{xsim.view}', '/home/s1788973/thesis/sd-emu/src/post_tb_func_synth.wcfg', '[get_fileset sim_1]')
 
         # if desired, treat Verilog (*.v) files as SystemVerilog (*.sv)
         if self.target.prj_cfg.cfg.treat_v_as_sv:
@@ -210,6 +212,9 @@ class VivadoEmulation(VivadoTCLGenerator):
             self.writeln('exec subst ' + self.subst + ' /d')
             if self.old_subst:
                 self.writeln('exec subst ' + self.subst + ' ' + self.old_subst)
+
+        if self.target.prj_cfg.cfg.post_sim:
+            self.writeln('launch_simulation -mode post-implementation -type functional')
 
         # run bitstream generation
         err_str = 'The design failed to meet the timing requirements.'

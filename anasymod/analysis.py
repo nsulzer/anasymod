@@ -330,6 +330,13 @@ class Analysis():
         # Check if active target is an FPGA target
         target = getattr(self, self.act_fpga_target)
 
+        # create sim result folders
+        if not os.path.exists(os.path.dirname(target.cfg.vcd_path)):
+            mkdir_p(os.path.dirname(target.cfg.vcd_path))
+
+        if not os.path.exists(os.path.dirname(target.result_path_raw)):
+            mkdir_p(os.path.dirname(target.result_path_raw))
+
         VivadoEmulation(target=target).build()
 
         # Build firmware for ctrl infrastructure if needed, first
