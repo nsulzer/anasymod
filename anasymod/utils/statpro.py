@@ -47,6 +47,7 @@ class FEATURES:
     anasymod_import         = "anasymod_import"
     anasymod_sim            = "anasymod_sim_"
     anasymod_build_vivado   = "anasymod_build_vivado"
+    anasymod_post_vivado   = "anasymod_post_vivado"
     anasymod_emulate_vivado = "anasymod_emulate_vivado"
 
 

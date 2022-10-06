@@ -447,9 +447,6 @@ class Config(BaseConfig):
         self.probe_to_file = False
         """ type(bool) : If True, all probes specified will be dumped to a file <probe_name>.out in the 'raw_results' folder. """
 
-        self.post_sim = False
-        """ type(bool) : If True, post-synthesis simulation is run after build. """
-
 def find_tool(name, hints=None, sys_path_hint=True):
     # set defaults
     if hints is None:

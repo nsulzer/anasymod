@@ -330,13 +330,6 @@ class Analysis():
         # Check if active target is an FPGA target
         target = getattr(self, self.act_fpga_target)
 
-        # create sim result folders
-        if not os.path.exists(os.path.dirname(target.cfg.vcd_path)):
-            mkdir_p(os.path.dirname(target.cfg.vcd_path))
-
-        if not os.path.exists(os.path.dirname(target.result_path_raw)):
-            mkdir_p(os.path.dirname(target.result_path_raw))
-
         VivadoEmulation(target=target).build()
 
         # Build firmware for ctrl infrastructure if needed, first
@@ -347,6 +340,33 @@ class Analysis():
             self._build_firmware(*args, **kwargs)
 
         statpro.statpro_update(statpro.FEATURES.anasymod_build_vivado)
+
+    def simulate_post(self):
+        """
+        Run post-implementation simulation
+        """
+
+        if not hasattr(self, self.act_fpga_target):
+            self._setup_targets(target=self.act_fpga_target, gen_structures=True)
+
+        # Check if active target is an FPGA target
+        target = getattr(self, self.act_fpga_target)
+
+        # create sim result folders
+        if not os.path.exists(os.path.dirname(target.cfg.vcd_path)):
+            mkdir_p(os.path.dirname(target.cfg.vcd_path))
+
+        if not os.path.exists(os.path.dirname(target.result_path_raw)):
+            mkdir_p(os.path.dirname(target.result_path_raw))
+
+        
+        if not os.path.isfile(getattr(target, 'bitfile_path')):
+            raise Exception(f'Bitstream for active FPGA target was not generated beforehand; please do so before running post-synthesis simulation.')
+        
+        # run the post-simulation
+        VivadoEmulation(target=target).post_simulate()
+
+        statpro.statpro_update(statpro.FEATURES.anasymod_post_vivado)
 
     def emulate(self, server_addr=None, convert_waveform=True):
         """

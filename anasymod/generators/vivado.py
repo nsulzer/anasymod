@@ -38,6 +38,14 @@ class VivadoTCLGenerator(CodeGenerator):
             else:
                 self.writeln(f'set_property board_part {board_part} [current_project]')
 
+    def open_project(self, project_name, project_directory,full_part_name=None):
+        # open the project
+        cmd = ['open_project']
+        cmd.append('"'+back2fwd(project_directory+'/'+project_name)+'.xpr''"')
+        if full_part_name is not None:
+            cmd.extend(['-part', full_part_name])
+        self.writeln(' '.join(cmd))
+
     def add_project_sources(self, content):
         """
         Add sources to project.

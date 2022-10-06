@@ -73,14 +73,6 @@ class VivadoEmulation(VivadoTCLGenerator):
         # add include directories
         self.add_include_dirs(content=self.target.content, objects='[current_fileset]')
 
-        # add things for post-synthesis simulation.
-        if self.target.prj_cfg.cfg.post_sim:
-            self.writeln('# Post synthesis simulation')
-            self.set_property('top', '{post_tb}', '[get_filesets {sim_1}]')
-            self.add_project_defines(content=self.target.content, fileset='[get_filesets {sim_1}]')
-            self.set_property('{xsim.simulate.runtime}', '{-all}', '[get_fileset sim_1]')
-            self.set_property('{xsim.view}', '/home/s1788973/thesis/sd-emu/src/post_tb_func_synth.wcfg', '[get_fileset sim_1]')
-
         # if desired, treat Verilog (*.v) files as SystemVerilog (*.sv)
         if self.target.prj_cfg.cfg.treat_v_as_sv:
             self.writeln('set_property file_type SystemVerilog [get_files -filter {FILE_TYPE == Verilog}]')
@@ -213,9 +205,6 @@ class VivadoEmulation(VivadoTCLGenerator):
             if self.old_subst:
                 self.writeln('exec subst ' + self.subst + ' ' + self.old_subst)
 
-        if self.target.prj_cfg.cfg.post_sim:
-            self.writeln('launch_simulation -mode post-implementation -type functional')
-
         # run bitstream generation
         err_str = 'The design failed to meet the timing requirements.'
         try:
@@ -237,6 +226,41 @@ class VivadoEmulation(VivadoTCLGenerator):
             # then re-raise the original exception
             raise
 
+    def post_simulate(self):
+
+        project_root = self.target.project_root
+
+        self.open_project(
+            project_name=self.target.prj_cfg.vivado_config.project_name,
+            project_directory=project_root
+            # full_part_name=self.target.prj_cfg.board.full_part_name
+        )
+
+        self.writeln('# Post synthesis simulation')
+        self.set_property('top', '{post_tb}', '[get_filesets {sim_1}]')
+        self.add_project_defines(content=self.target.content, fileset='[get_filesets {sim_1}]')
+        self.set_property('{xsim.simulate.runtime}', '{-all}', '[get_fileset sim_1]')
+        self.set_property('{xsim.view}', '/home/s1788973/thesis/sd-emu/src/post_tb_func_synth.wcfg', '[get_fileset sim_1]')
+
+        self.writeln('launch_simulation -mode post-implementation -type functional')
+        # run post simulation
+        try:
+            self.run(filename=r"post_simulation.tcl")
+        except:
+            # remove and restore drive substitutions
+            if os.name == 'nt':
+                if self.subst:
+                    try:
+                        subprocess.call(f'subst {drive} /d', shell=True)
+                    except:
+                        print(f'WARNING: Removing mapped drive:{drive} did not work.')
+                    if self.old_subst:
+                        try:
+                            subprocess.call(f'subst {drive} {self.old_subst}', shell=True)
+                        except:
+                            print(f'WARNING: Mapping of drive:{drive} to network path: {self.old_subst} did not work.')
+            # then re-raise the original exception
+            raise
 
     def run_FPGA(self, **kwargs):
         """
