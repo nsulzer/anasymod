@@ -359,10 +359,6 @@ class Analysis():
         if not os.path.exists(os.path.dirname(target.result_path_raw)):
             mkdir_p(os.path.dirname(target.result_path_raw))
 
-        
-        if not os.path.isfile(getattr(target, 'bitfile_path')):
-            raise Exception(f'Bitstream for active FPGA target was not generated beforehand; please do so before running post-synthesis simulation.')
-        
         # run the post-simulation
         VivadoEmulation(target=target).post_simulate()
 
