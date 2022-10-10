@@ -345,9 +345,9 @@ class Analysis():
         """
         Run post-implementation simulation
         """
-
-        if not hasattr(self, self.act_fpga_target):
-            self._setup_targets(target=self.act_fpga_target, gen_structures=True)
+        shutil.rmtree(self._prj_cfg.build_root) # Remove target specific build dir to make sure there is no legacy
+        mkdir_p(self._prj_cfg.build_root)
+        self._setup_targets(target=self.act_fpga_target, gen_structures=True)
 
         # Check if active target is an FPGA target
         target = getattr(self, self.act_fpga_target)

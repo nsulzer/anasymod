@@ -227,20 +227,154 @@ class VivadoEmulation(VivadoTCLGenerator):
             raise
 
     def post_simulate(self):
+        #subst drive
+        drive = 'V:'
+        # Check if on-chip memory is sufficient on selected FPGA board
+        if self.target.prj_cfg.board.bram is not None:
+            bits_per_sample = 0
+            probes = (self.target.str_cfg.digital_probes + self.target.str_cfg.analog_probes +
+                      [self.target.str_cfg.time_probe] + [self.target.str_cfg.dec_cmp])
+            for probe in probes:
+                bits_per_sample += int(probe.width)
+            if (bits_per_sample * self.target.prj_cfg.ila_depth) > (self.target.prj_cfg.board.bram * 8):
+                raise(f'ERROR: Number ob samples to be recorded does not fit on FPGA board, please either select a '
+                      f'board with more block memory, or change the ila_depth')
+        else:
+            print(f'WARNING: Check for sufficient BRAM could not be conducted, '
+                  f'not enough information given in board definition!')
+
+        scfg = self.target.str_cfg
+        """ type : StructureConfig """
 
         project_root = self.target.project_root
 
-        self.open_project(
+        # self.open_project(
+        #     project_name=self.target.prj_cfg.vivado_config.project_name,
+        #     project_directory=project_root
+        #     # full_part_name=self.target.prj_cfg.board.full_part_name
+        # )
+
+        # under Windows there is the problem with path length more than 146 characters, that's why we have to use
+        # subst command to substitute project directory to a drive letter
+        if os.name == 'nt':
+            if len(back2fwd(self.target.project_root)) > 80:
+
+                project_root = self.subst_path(drive=drive)
+
+        # create a new project
+        self.create_project(
             project_name=self.target.prj_cfg.vivado_config.project_name,
-            project_directory=project_root
-            # full_part_name=self.target.prj_cfg.board.full_part_name
+            project_directory=project_root,
+            full_part_name=self.target.prj_cfg.board.full_part_name,
+            board_part=self.target.prj_cfg.board.board_part,
+            force=True
         )
+
+        # add all source files to the project (including header files)
+        self.add_project_sources(content=self.target.content)
+
+        # define the top module
+        self.set_property('top', f"{{{self.target.cfg.top_module}}}", '[current_fileset]')
+
+        # set define variables
+        self.add_project_defines(content=self.target.content, fileset='[current_fileset]')
+
+        # add include directories
+        self.add_include_dirs(content=self.target.content, objects='[current_fileset]')
 
         self.writeln('# Post synthesis simulation')
         self.set_property('top', '{post_tb}', '[get_filesets {sim_1}]')
         self.add_project_defines(content=self.target.content, fileset='[get_filesets {sim_1}]')
         self.set_property('{xsim.simulate.runtime}', '{-all}', '[get_fileset sim_1]')
-        self.set_property('{xsim.view}', '/home/s1788973/thesis/sd-emu/src/post_tb_func_synth.wcfg', '[get_fileset sim_1]')
+        self.set_property('{xsim.view}', '{/home/s1788973/thesis/sd-emu/src/post_tb_func_synth.wcfg}', '[get_fileset sim_1]')
+
+        # if desired, treat Verilog (*.v) files as SystemVerilog (*.sv)
+        if self.target.prj_cfg.cfg.treat_v_as_sv:
+            self.writeln('set_property file_type SystemVerilog [get_files -filter {FILE_TYPE == Verilog}]')
+
+        # specify the level of flattening to use
+        self.set_property(
+            'STEPS.SYNTH_DESIGN.ARGS.FLATTEN_HIERARCHY',
+            self.target.prj_cfg.cfg.flatten_hierarchy,
+            '[get_runs synth_1]'
+        )
+
+        # append user constraints.  for flexibility and backwards compatibility, three modes are provided:
+        # 1. "read_xdc": XDC file is read in using the "read_xdc" command (default)
+        # 2. "pre_constrs": XDC file is prepended to the contents of constrs.xdc
+        # 3. "post_constrs": XDC file is appended to the contents of constrs.xdc
+        for xdc_file in self.target.content.xdc_files:
+            if xdc_file.xdc_mode == 'read_xdc':
+                for file in xdc_file.files:
+                    self.writeln(f'read_xdc "{back2fwd(file)}"')
+
+        if not self.target.cfg.custom_top:
+            # write constraints to file
+            constrs = CodeGenerator()
+
+            # read in "pre_constr" XDC files
+            for xdc_file in self.target.content.xdc_files:
+                if xdc_file.xdc_mode == 'pre_constr':
+                    for file in xdc_file.files:
+                        constrs.writeln(f'# pre_constr: {file}')
+                        constrs.read_from_file(file)
+                        constrs.writeln()
+
+            # generate constraints for external clk
+            constrs.use_templ(TemplExtClk(target=self.target))
+            # generate clock wizard IP core
+            self.use_templ(TemplClkWiz(target=self.target))
+
+            # Add IP cores necessary for control interface
+            ip_core_templates = self.target.ctrl.add_ip_cores(scfg=scfg, ip_dir=self.target.ip_dir)
+            for ip_core_template in ip_core_templates:
+                self.use_templ(ip_core_template)
+
+            ## Add constraints for additional generated emu_clks
+            if not self.target.prj_cfg.cfg.no_time_manager:
+                constrs.writeln('create_generated_clock -name emu_clk -source [get_pins clk_gen_i/clk_wiz_0_i/clk_out1] -divide_by 2 [get_pins gen_emu_clks_i/buf_emu_clk/I]')
+
+                for k in range(scfg.num_gated_clks):
+                    constrs.writeln(f'create_generated_clock -name clk_other_{k} -source [get_pins clk_gen_i/clk_wiz_0_i/clk_out1] -divide_by 4 [get_pins gen_emu_clks_i/buf_{k}/I]')
+
+            # Setup ILA for signal probing - only of at least one probe is defined
+            if len(scfg.analog_probes + scfg.digital_probes + [scfg.time_probe]) != 0:
+                self.use_templ(TemplILA(target=self.target, depth=self.target.prj_cfg.ila_depth))
+    
+            # Setup Debug Hub
+            constrs.use_templ(TemplDbgHub(target=self.target))
+
+            # Add false paths for Zynq control signals.  This is necessary in some cases
+            # to provide timing violations, since the ARM core is running on a different
+            # clock that the emulator circuitry.  This is a real problem, but is handled
+            # in firmware with handshaking and very short delays.
+            if self.target.cfg.fpga_sim_ctrl == FPGASimCtrl.UART_ZYNQ:
+                constrs.writeln('set_false_path -through [get_pins sim_ctrl_gen_i/zynq_gpio_i/*]')
+
+            # read in "post_constr" XDC files
+            for xdc_file in self.target.content.xdc_files:
+                if xdc_file.xdc_mode == 'post_constr':
+                    for file in xdc_file.files:
+                        constrs.writeln(f'# post_constr: {file}')
+                        constrs.read_from_file(file)
+                        constrs.writeln()
+
+            # write master constraints to file and add to project
+            master_constr_path = os.path.join(self.target.prj_cfg.build_root, 'constrs.xdc')
+            constrs.write_to_file(master_constr_path)
+            self.add_files([master_constr_path], fileset='constrs_1')
+
+        # read user-provided IPs
+        self.writeln('# Custom user-provided IP cores')
+        for xci_file in self.target.content.xci_files:
+            for file in xci_file.files:
+                self.writeln(f'read_ip "{back2fwd(file)}"')
+
+        # read user-provided TCL scripts
+        self.writeln('# Custom user-provided TCL scripts')
+        for tcl_file in self.target.content.tcl_files:
+            for file in tcl_file.files:
+                self.writeln(f'source "{back2fwd(file)}"')
 
         # upgrade IPs as necessary
         self.writeln('if {[get_ips] ne ""} {')
@@ -249,6 +383,10 @@ class VivadoEmulation(VivadoTCLGenerator):
 
         # generate all IPs
         self.writeln('generate_target all [get_ips]')
+
+        # create additional Hardware for control interface
+        if self.target.cfg.fpga_sim_ctrl == FPGASimCtrl.UART_ZYNQ:
+            self.use_templ(TemplZynqGPIO(is_ultrascale=scfg.is_ultrascale))
 
         # run implementation if out of date
         self.writeln('reset_run synth_1')
