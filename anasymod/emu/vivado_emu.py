@@ -226,7 +226,7 @@ class VivadoEmulation(VivadoTCLGenerator):
             # then re-raise the original exception
             raise
 
-    def post_simulate(self):
+    def post_simulate(self, tcl_script):
 
         project_root = self.target.project_root
 
@@ -239,24 +239,25 @@ class VivadoEmulation(VivadoTCLGenerator):
         self.writeln('# Post synthesis simulation')
         self.set_property('top', '{post_tb}', '[get_filesets {sim_1}]')
         self.add_project_defines(content=self.target.content, fileset='[get_filesets {sim_1}]')
-        self.set_property('{xsim.simulate.runtime}', '{-all}', '[get_fileset sim_1]')
-        self.set_property('{xsim.view}', '/home/s1788973/thesis/sd-emu/src/post_tb_func_synth.wcfg', '[get_fileset sim_1]')
 
-        # upgrade IPs as necessary
-        self.writeln('if {[get_ips] ne ""} {')
-        self.writeln('    upgrade_ip [get_ips]')
-        self.writeln('}')
+        # # upgrade IPs as necessary
+        # self.writeln('if {[get_ips] ne ""} {')
+        # self.writeln('    upgrade_ip [get_ips]')
+        # self.writeln('}')
 
-        # generate all IPs
-        self.writeln('generate_target all [get_ips]')
+        # # generate all IPs
+        # self.writeln('generate_target all [get_ips]')
 
-        # run implementation if out of date
-        self.writeln('reset_run synth_1')
-        num_cores = min(int(self.target.prj_cfg.vivado_config.num_cores), 24)
-        self.writeln(f'launch_runs impl_1 -jobs {num_cores}')
-        self.writeln('wait_on_run impl_1')
+        # # run implementation if out of date
+        # self.writeln('reset_run synth_1')
+        # num_cores = min(int(self.target.prj_cfg.vivado_config.num_cores), 24)
+        # self.writeln(f'launch_runs impl_1 -jobs {num_cores}')
+        # self.writeln('wait_on_run impl_1')
 
-        self.writeln('launch_simulation -mode post-implementation -type functional')
+        # self.set_property('{xsim.simulate.runtime}', '{-all}', '[get_fileset sim_1]')
+        if tcl_script is not None:
+            self.set_property('{xsim.simulate.custom_tcl}', f'{{{back2fwd(tcl_script)}}}', '[get_fileset sim_1]')
+        self.writeln('launch_simulation -mode post-implementation -type functional')\
         # run post simulation
         try:
             self.run(filename=r"post_simulation.tcl")

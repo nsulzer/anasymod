@@ -26,6 +26,7 @@ from anasymod.wave import ConvertWaveform
 from anasymod.plugins import Plugin
 from typing import Union
 from importlib import import_module
+from anasymod.generators.codegen import CodeGenerator
 
 class Analysis():
     """
@@ -341,9 +342,11 @@ class Analysis():
 
         statpro.statpro_update(statpro.FEATURES.anasymod_build_vivado)
 
-    def simulate_post(self):
+    def simulate_post(self, tcl_script=None):
         """
         Run post-implementation simulation
+
+        :param tcl_script: custom TCL file for running the simulation
         """
 
         if not hasattr(self, self.act_fpga_target):
@@ -359,8 +362,23 @@ class Analysis():
         if not os.path.exists(os.path.dirname(target.result_path_raw)):
             mkdir_p(os.path.dirname(target.result_path_raw))
 
+        if tcl_script is None:
+            codegen = CodeGenerator()
+            codegen.writeln(f'set curr_wave [current_wave_config]')
+            codegen.writeln(f'if {{ [string length $curr_wave] == 0 }} {{')
+            codegen.writeln(f'  if {{ [llength [get_objects]] > 0}} {{')
+            codegen.writeln(f'    add_wave /')
+            codegen.writeln(f'    set_property needs_save false [current_wave_config]')
+            codegen.writeln(f'  }} else {{')
+            codegen.writeln(f'    send_msg_id Add_Wave-1 WARNING "No top level signals found. Simulator will start without a wave window."')
+            codegen.writeln(f'  }}')
+            codegen.writeln(f'}}')
+            codegen.writeln(f'run all')
+            tcl_script = os.path.join(target.prj_cfg.build_root, 'post_sim.tcl')
+            codegen.write_to_file(tcl_script)
+
         # run the post-simulation
-        VivadoEmulation(target=target).post_simulate()
+        VivadoEmulation(target=target).post_simulate(tcl_script)
 
         statpro.statpro_update(statpro.FEATURES.anasymod_post_vivado)
 
